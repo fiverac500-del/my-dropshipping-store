@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MY BAZAR BD | Online Shopping</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f7f7f7;color:#171717}
@@ -41,6 +42,7 @@ footer{background:#080808;color:white;text-align:center;padding:25px;margin-top:
 }
 </style>
 </head>
+
 <body>
 
 <header>
@@ -64,6 +66,7 @@ Shop your favorite products at great prices.</p>
 </section>
 
 <main>
+
 <h2 class="section" id="categories">Shop by Categories</h2>
 <div class="categories">
 <div class="category">📱 Electronics</div>
@@ -119,6 +122,7 @@ Shop your favorite products at great prices.</p>
 <button class="btn" onclick="openContact()">Send Message</button>
 </div>
 </section>
+
 </main>
 
 <footer>
@@ -149,7 +153,7 @@ Shop your favorite products at great prices.</p>
 <h2>Contact MY BAZAR BD</h2>
 <form id="contactForm">
 <input id="contactName" placeholder="আপনার নাম" required>
-<input id="contactPhone" placeholder="মোবাইল নম্বর">
+<input id="contactPhone" type="tel" placeholder="মোবাইল নম্বর">
 <textarea id="contactMessage" placeholder="আপনার প্রশ্ন বা মেসেজ লিখুন" required></textarea>
 <button class="btn" type="submit" style="width:100%">Send Message on WhatsApp</button>
 </form>
@@ -157,56 +161,62 @@ Shop your favorite products at great prices.</p>
 </div>
 
 <script>
-// এখানে নিজের WhatsApp নম্বর বসাবে: 8801849482239
+// MY BAZAR BD WhatsApp Number
 const STORE_WHATSAPP = "8801849482239";
 
 function sendWhatsApp(message){
-if(STORE_WHATSAPP === "8801849482239"){
-alert("প্রথমে কোডে তোমার WhatsApp নম্বর বসাতে হবে।");
-return;
-}
-window.open("https://wa.me/"+STORE_WHATSAPP+"?text="+encodeURIComponent(message),"_blank");
+const url = "https://wa.me/" + STORE_WHATSAPP + "?text=" + encodeURIComponent(message);
+window.location.href = url;
 }
 
 function openOrder(name,price){
-document.getElementById("productName").value="Product: "+name;
-document.getElementById("productPrice").value="Price: ৳"+price;
-document.getElementById("orderModal").style.display="flex";
+document.getElementById("productName").value = "Product: " + name;
+document.getElementById("productPrice").value = "Price: ৳" + price;
+document.getElementById("orderModal").style.display = "flex";
 }
+
 function openContact(){
-document.getElementById("contactModal").style.display="flex";
+document.getElementById("contactModal").style.display = "flex";
 }
+
 function closeModal(id){
-document.getElementById(id).style.display="none";
+document.getElementById(id).style.display = "none";
 }
+
 function contactWhatsApp(){
 sendWhatsApp("Hello MY BAZAR BD! I want to know about your products.");
 }
+
 document.getElementById("orderForm").addEventListener("submit",function(e){
 e.preventDefault();
-const msg="NEW ORDER - MY BAZAR BD\n"+
-"Product: "+document.getElementById("productName").value+"\n"+
-document.getElementById("productPrice").value+"\n"+
-"Name: "+document.getElementById("customerName").value+"\n"+
-"Phone: "+document.getElementById("customerPhone").value+"\n"+
-"Address: "+document.getElementById("customerAddress").value+"\n"+
-"Quantity: "+document.getElementById("quantity").value+"\n"+
-"Size/Color: "+document.getElementById("sizeColor").value;
+
+const msg =
+"NEW ORDER - MY BAZAR BD\n" +
+document.getElementById("productName").value + "\n" +
+document.getElementById("productPrice").value + "\n" +
+"Name: " + document.getElementById("customerName").value + "\n" +
+"Phone: " + document.getElementById("customerPhone").value + "\n" +
+"Address: " + document.getElementById("customerAddress").value + "\n" +
+"Quantity: " + document.getElementById("quantity").value + "\n" +
+"Size/Color: " + document.getElementById("sizeColor").value;
+
 sendWhatsApp(msg);
 });
+
 document.getElementById("contactForm").addEventListener("submit",function(e){
 e.preventDefault();
-const msg="MY BAZAR BD CUSTOMER MESSAGE\n"+
-"Name: "+document.getElementById("contactName").value+"\n"+
-"Phone: "+document.getElementById("contactPhone").value+"\n"+
-"Message: "+document.getElementById("contactMessage").value;
+
+const msg =
+"MY BAZAR BD CUSTOMER MESSAGE\n" +
+"Name: " + document.getElementById("contactName").value + "\n" +
+"Phone: " + document.getElementById("contactPhone").value + "\n" +
+"Message: " + document.getElementById("contactMessage").value;
+
 sendWhatsApp(msg);
 });
 </script>
-</body>
-<!-- আগের ওয়েবসাইটের কোড -->
 
-<!--Start of Tawk.to Script-->
+<!-- Tawk.to Live Chat: kept only once -->
 <script type="text/javascript">
 var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
 (function(){
@@ -218,20 +228,6 @@ s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
-<!--End of Tawk.to Script-->
 
 </body>
-<!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/6afbecfc9fd3a43cbdf88bf4/1k7k1beqa';
-s1.charset='UTF-8';
-s1.setAttribute('crossorigin','*');
-s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
-<!--End of Tawk.to Script-->  
 </html>
