@@ -75,7 +75,7 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 
 <section class="hero">
 <h2>Welcome to <span>MY BAZAR BD</span></h2>
-<p>আপনার পছন্দের সব পণ্য এখন এক জায়গায়!</p>
+<p>আপনার পছন্দের সব পণ্য এখন এক জায়গায়!</p>
 <a href="#products" class="btn">SHOP NOW</a>
 </section>
 
@@ -95,7 +95,7 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 
 <section class="info" id="about">
 <h2>About MY BAZAR BD</h2>
-<p>MY BAZAR BD is your online shopping destination in Bangladesh. আমরা সাশ্রয়ী দামে প্রয়োজনীয় পণ্য পৌঁছে দিতে চাই।</p>
+<p>MY BAZAR BD is your online shopping destination in Bangladesh. আমরা সাশ্রয়ী দামে প্রয়োজনীয় পণ্য পৌঁছে দিতে চাই।</p>
 </section>
 
 <section class="info" id="contact">
@@ -241,7 +241,7 @@ async function loadProducts(){
 function renderProducts(){
  const list=document.getElementById("productList");
  const filtered=currentCategory==="all"?products:products.filter(p=>p.category===currentCategory);
- if(!filtered.length){list.innerHTML="<p>কোনো Product পাওয়া যায়নি।</p>";return;}
+ if(!filtered.length){list.innerHTML="<p>কোনো Product পাওয়া যায়নি।</p>";return;}
  list.innerHTML=filtered.map(p=>`
  <article class="product">
  <img src="${safe(p.image_url||"https://placehold.co/400x400?text=Product")}" alt="${safe(p.name)}">
@@ -314,25 +314,32 @@ document.getElementById("orderForm").addEventListener("submit",async e=>{
  const customer=document.getElementById("oName").value.trim();
  const phone=document.getElementById("oPhone").value.trim();
  const address=document.getElementById("oAddress").value.trim();
+ const size=document.getElementById("oSize").value.trim();
  const total=Number(p.price)*qty;
 
- const msg="NEW ORDER - MY BAZAR BD\nProduct: "+p.name+
+ const {data:orderId,error}=await db.rpc("place_order",{
+  p_product_id:id,
+  p_quantity:qty,
+  p_name:customer,
+  p_phone:phone,
+  p_address:address,
+  p_size:size
+ });
+
+ const msg="NEW ORDER - MY BAZAR BD"+
+ (orderId?"\nOrder ID: "+orderId:"")+
+ "\nProduct: "+p.name+
  "\nPrice: ৳"+p.price+"\nQuantity: "+qty+
  "\nTotal: ৳"+total+"\nName: "+customer+
  "\nPhone: "+phone+"\nAddress: "+address+
- "\nSize/Color: "+document.getElementById("oSize").value;
-
- // Database order insertion requires the public order INSERT policies.
- const {error}=await db.from("orders").insert({
- customer_name:customer,phone:phone,address:address,
- total_amount:total,status:"pending"
- }).select("id").single();
+ "\nSize/Color: "+size;
 
  if(error){
-  notice("Database Order Save হয়নি: "+error.message+
-  " WhatsApp দিয়ে Order পাঠাতে পারো।");
+  notice("Database Order Save হয়নি: "+error.message+
+  " WhatsApp দিয়ে Order পাঠাতে পারো।");
  }else{
-  notice("Order Database-এ Save হয়েছে!");
+  notice("আপনার Order গ্রহণ করা হয়েছে! Order ID: "+orderId);
+  await loadProducts();
  }
  window.open("https://wa.me/"+STORE_WHATSAPP+"?text="+encodeURIComponent(msg),"_blank");
  closeModal("orderModal");
@@ -350,7 +357,7 @@ async function adminLogin(){
  if(profileError||profile?.role!=="admin"){
   await db.auth.signOut();
   currentUser=null;
-  alert("এই Account Admin হিসেবে অনুমোদিত নয়।");
+  alert("এই Account Admin হিসেবে অনুমোদিত নয়।");
   return;
  }
  document.getElementById("loginArea").classList.add("hidden");
@@ -419,7 +426,7 @@ async function saveProduct(){
  await db.from("products").update(payload).eq("id",Number(id)):
  await db.from("products").insert(payload);
  if(result.error)throw result.error;
- alert("Product Save হয়েছে!");
+ alert("Product Save হয়েছে!");
  clearProductForm();
  await loadProducts();await loadAdminProducts();
  }catch(e){alert("Error: "+e.message);}
@@ -475,7 +482,7 @@ async function saveBanner(){
  sort_order:0
  });
  if(error)throw error;
- alert("Banner Upload হয়েছে!");
+ alert("Banner Upload হয়েছে!");
  await loadBanners();await loadAdminBanners();
  }catch(e){alert(e.message);}
 }
@@ -521,7 +528,8 @@ async function loadAdminOrders(){
  if(error){document.getElementById("adminOrders").textContent=error.message;return;}
  document.getElementById("adminOrders").innerHTML=(data||[]).map(o=>`
  <div class="admin-item">
- <b>Order #${o.id}</b>
+ <b>Order #${safe(o.id)}</b>
+ <p><b>${safe(o.product_name||"—")}</b> × ${safe(o.quantity||1)}${o.size_color?" | "+safe(o.size_color):""}</p>
  <p>${safe(o.customer_name)} | ${safe(o.phone)}</p>
  <p>${safe(o.address)}</p>
  <p>Total: ৳${o.total_amount}</p>
@@ -533,7 +541,7 @@ async function loadAdminOrders(){
  <option value="delivered">Delivered</option>
  <option value="cancelled">Cancelled</option>
  </select>
- <button class="btn" onclick="updateOrder(${o.id})">Update Status</button>
+ <button class="btn" onclick="updateOrder('${o.id}')">Update Status</button>
  </div>`).join("");
 }
 async function updateOrder(id){
@@ -578,4 +586,4 @@ s0.parentNode.insertBefore(s1,s0);
 </script>
 
 </body>
-  </html>
+</html>
