@@ -5,22 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MY BAZAR BD | Online Shopping</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 *{box-sizing:border-box}
+html,body{overflow-x:hidden}
 body{margin:0;font-family:Arial,sans-serif;background:#f7f7f7;color:#171717}
 header{background:#080808;color:white;text-align:center;padding:18px;border-bottom:4px solid #ed1728}
 header h1{margin:0;font-size:27px}
-header span,.red{color:#ed1728}
+header span{color:#ed1728}
 nav{background:#191919;padding:14px;text-align:center;position:sticky;top:0;z-index:5}
 nav a{color:white;text-decoration:none;margin:0 8px;font-size:13px}
 .hero{background:linear-gradient(120deg,#080808,#451018);color:white;text-align:center;padding:45px 15px}
 .hero h2{font-size:30px}
 .hero span{color:#ff2638}
 main{max-width:1150px;margin:auto;padding:20px 14px}
-.btn{background:#ed1728;color:white;border:0;padding:11px 16px;border-radius:6px;cursor:pointer;font-weight:bold}
+.btn{background:#ed1728;color:white;border:0;padding:11px 16px;border-radius:6px;cursor:pointer;font-weight:bold;text-decoration:none;display:inline-block}
 .btn.dark{background:#191919}
 .btn.green{background:#168348}
+.btn:disabled{background:#999;cursor:not-allowed}
 .section{text-align:center;margin:30px 0 20px}
 .banner{display:none;width:100%;height:220px;object-fit:cover;border-radius:12px;background:#ddd}
 .banner.active{display:block}
@@ -30,46 +31,41 @@ main{max-width:1150px;margin:auto;padding:20px 14px}
 .category{background:white;border:1px solid #ddd;padding:13px 18px;border-radius:8px;white-space:nowrap;cursor:pointer}
 .category.active{background:#ed1728;color:white}
 .products{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
-.product{background:white;border-radius:9px;overflow:hidden;box-shadow:0 2px 8px #0001;padding-bottom:12px}
-.product img{width:100%;aspect-ratio:1;object-fit:cover;background:#eee}
-.product h3{font-size:15px;margin:10px}
+.product{position:relative;background:white;border-radius:9px;overflow:hidden;box-shadow:0 2px 8px #0001;padding-bottom:12px}
+.product img{width:100%;aspect-ratio:1;object-fit:cover;background:#eee;cursor:pointer}
+.product h3{font-size:15px;margin:10px;cursor:pointer}
 .price{color:#ed1728;font-weight:bold;margin:10px}
 .old{color:#888;text-decoration:line-through;font-size:12px;margin-left:6px}
-.product button{margin:3px 10px;width:calc(100% - 20px)}
+.product>.btn{margin:3px 10px;width:calc(100% - 20px);text-align:center}
+.small{font-size:12px;color:#666;margin:6px 10px}
+.red{color:#ed1728;font-weight:bold}
+.dots{position:absolute;top:6px;right:6px;width:34px;height:34px;border-radius:50%;border:0;background:#000a;color:#fff;font-size:20px;cursor:pointer;z-index:2}
+.menu{position:absolute;top:44px;right:6px;background:white;border:1px solid #ddd;border-radius:8px;z-index:3;box-shadow:0 2px 8px #0003;overflow:hidden}
+.menu button{display:block;width:100%;border:0;background:white;padding:10px 18px;text-align:left;cursor:pointer;font-size:14px}
 .info{background:white;padding:20px;border-radius:9px;margin-top:22px;line-height:1.7}
 footer{background:#080808;color:white;text-align:center;padding:25px;margin-top:30px}
 .modal{display:none;position:fixed;inset:0;background:#000a;z-index:20;align-items:center;justify-content:center;padding:12px}
 .modal-content{background:white;padding:20px;border-radius:12px;width:100%;max-width:480px;max-height:90vh;overflow:auto}
 input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:6px;font:inherit}
 .close{float:right;border:0;padding:8px;cursor:pointer}
-.admin{background:white;padding:15px;border-radius:10px;margin:20px 0}
+.admin{background:white;padding:15px;border-radius:10px;margin:20px 0;overflow:hidden}
 .admin-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .admin-grid button{width:100%}
 .admin-item{border-bottom:1px solid #ddd;padding:10px 0}
-.small{font-size:12px;color:#666}
-.hidden{display:none!important}
+.admin-item.new{border-left:4px solid #ed1728;padding-left:8px;background:#fff6f6}
 .status{padding:5px;background:#eee;border-radius:5px;font-size:12px}
-#message{padding:10px;color:#168348}
-@media(min-width:650px){
-.products{grid-template-columns:repeat(4,minmax(0,1fr))}
-.banner{height:350px}
-}
+.hidden{display:none!important}
+#message{padding:10px;color:#168348;font-weight:bold}
+@media(min-width:650px){.products{grid-template-columns:repeat(4,minmax(0,1fr))}.banner{height:350px}}
 </style>
 </head>
-
 <body>
 
-<header>
-<h1>MY BAZAR <span>BD</span></h1>
-<p>Your Shopping Destination</p>
-</header>
+<header><h1>MY BAZAR <span>BD</span></h1><p>Your Shopping Destination</p></header>
 
 <nav>
-<a href="#">Home</a>
-<a href="#categories">Categories</a>
-<a href="#products">Products</a>
-<a href="#about">About</a>
-<a href="#contact">Contact</a>
+<a href="#">Home</a><a href="#categories">Categories</a><a href="#products">Products</a>
+<a href="#about">About</a><a href="#contact">Contact</a>
 <button class="btn" onclick="openAdmin()">Admin</button>
 </nav>
 
@@ -80,7 +76,6 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 </section>
 
 <main>
-
 <div class="banner-area" id="bannerArea"></div>
 
 <h2 class="section" id="categories">Shop by Categories</h2>
@@ -89,9 +84,7 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 </div>
 
 <h2 class="section" id="products">All Products</h2>
-<div id="productList" class="products">
-<p>Loading products...</p>
-</div>
+<div id="productList" class="products"><p>Loading products...</p></div>
 
 <section class="info" id="about">
 <h2>About MY BAZAR BD</h2>
@@ -102,9 +95,9 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <h2>Contact Us</h2>
 <p>পণ্য সম্পর্কে জানতে আমাদের সাথে যোগাযোগ করুন।</p>
 <button class="btn" onclick="contactWhatsApp()">WhatsApp</button>
+<button class="btn dark" onclick="openChat()">Live Chat</button>
 </section>
 
-<!-- ADMIN PANEL -->
 <section id="adminPanel" class="admin hidden">
 <h2>MY BAZAR BD — Admin Dashboard</h2>
 <div id="loginArea">
@@ -117,13 +110,12 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <div id="adminDashboard" class="hidden">
 <p id="adminWelcome"></p>
 <button class="btn dark" onclick="adminLogout()">Logout</button>
-
 <h3>Dashboard</h3>
 <div class="admin-grid">
 <button class="btn" onclick="showAdminSection('productAdmin')">Products</button>
 <button class="btn" onclick="showAdminSection('bannerAdmin')">Banners</button>
 <button class="btn" onclick="showAdminSection('categoryAdmin')">Categories</button>
-<button class="btn" onclick="showAdminSection('orderAdmin')">Orders</button>
+<button class="btn" id="ordersBtn" onclick="showAdminSection('orderAdmin')">Orders</button>
 </div>
 
 <div id="productAdmin">
@@ -133,6 +125,7 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <textarea id="pDescription" placeholder="Description"></textarea>
 <input id="pPrice" type="number" placeholder="Price">
 <input id="pOldPrice" type="number" placeholder="Old Price">
+<input id="pColors" placeholder="Colors (কমা দিয়ে, যেমন: Black, White)">
 <select id="pCategory"></select>
 <input id="pStock" type="number" min="0" value="10" placeholder="Stock">
 <label>Product Image</label>
@@ -161,6 +154,7 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 
 <div id="orderAdmin" class="hidden">
 <h3>Customer Orders</h3>
+<button class="btn dark" onclick="loadAdminOrders()">🔄 Refresh</button>
 <div id="adminOrders"></div>
 </div>
 </div>
@@ -174,53 +168,87 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <p>Online Shopping in Bangladesh</p>
 </footer>
 
-<!-- ORDER MODAL -->
+<div class="modal" id="detailModal">
+<div class="modal-content">
+<button class="close" onclick="closeModal('detailModal')">✕</button>
+<div id="detailBody"></div>
+</div>
+</div>
+
 <div class="modal" id="orderModal">
 <div class="modal-content">
 <button class="close" onclick="closeModal('orderModal')">✕</button>
 <h2>Place Your Order</h2>
 <form id="orderForm">
 <input id="oProduct" type="hidden">
-<input id="oPrice" type="hidden">
 <p id="oProductText"></p>
 <input id="oName" placeholder="আপনার নাম" required>
 <input id="oPhone" type="tel" placeholder="মোবাইল নম্বর" required>
 <textarea id="oAddress" placeholder="সম্পূর্ণ ডেলিভারি ঠিকানা" required></textarea>
+<select id="oColor" class="hidden"></select>
 <input id="oQuantity" type="number" min="1" value="1" required>
-<input id="oSize" placeholder="Size / Color (যদি থাকে)">
+<input id="oSize" placeholder="Size (যদি থাকে)">
+<p class="small">ক্যাশ অন ডেলিভারি: পণ্য হাতে পেয়ে টাকা দিন।</p>
 <button class="btn" type="submit" style="width:100%">Submit Order</button>
 </form>
 </div>
 </div>
 
 <script>
-const SUPABASE_URL = "https://lrihrtqyicygaqbmhfee.supabase.co";
-const SUPABASE_KEY = "sb_publishable_uGeCiYaeuR9WuOcbnI7e1w_8PLNTdc6";
-const STORE_WHATSAPP = "8801849482239";
+const SUPABASE_URL="https://lrihrtqyicygaqbmhfee.supabase.co";
+const SUPABASE_KEY="sb_publishable_uGeCiYaeuR9WuOcbnI7e1w_8PLNTdc6";
+const STORE_WHATSAPP="8801849482239";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let products=[],categories=[],banners=[],ordersCache=[];
+let currentCategory="all",currentUser=null,isAdmin=false,lastOrderCount=null;
 
-let products = [];
-let categories = [];
-let banners = [];
-let currentCategory = "all";
-let currentUser = null;
+function $(id){return document.getElementById(id);}
+function notice(t){$("message").textContent=t;}
+function closeModal(id){$(id).style.display="none";}
+function openAdmin(){$("adminPanel").classList.remove("hidden");$("adminPanel").scrollIntoView({behavior:"smooth"});}
+function contactWhatsApp(){window.open("https://wa.me/"+STORE_WHATSAPP+"?text="+encodeURIComponent("Hello MY BAZAR BD!"),"_blank");}
+function openChat(){
+ if(window.Tawk_API&&Tawk_API.maximize){Tawk_API.maximize();}
+ else{alert("Chat লোড হচ্ছে, একটু পরে আবার চেষ্টা করুন।");}
+}
+function safe(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function colorList(p){return (p.colors||"").split(",").map(s=>s.trim()).filter(Boolean);}
 
-function notice(text){
- document.getElementById("message").textContent=text;
+function beep(){
+ try{
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.frequency.value=880;g.gain.value=0.3;
+  o.start();
+  setTimeout(()=>{o.stop();ctx.close();},600);
+ }catch(e){}
 }
 
-function closeModal(id){
- document.getElementById(id).style.display="none";
+function copyText(t){
+ const done=()=>alert("কপি হয়েছে! এখন merrono-তে পেস্ট করুন।");
+ if(navigator.clipboard&&navigator.clipboard.writeText){
+  navigator.clipboard.writeText(t).then(done).catch(()=>fallbackCopy(t,done));
+ }else{fallbackCopy(t,done);}
 }
-
-function openAdmin(){
- document.getElementById("adminPanel").classList.remove("hidden");
- document.getElementById("adminPanel").scrollIntoView({behavior:"smooth"});
+function fallbackCopy(t,done){
+ const ta=document.createElement("textarea");
+ ta.value=t;ta.style.position="fixed";ta.style.opacity="0";
+ document.body.appendChild(ta);ta.select();
+ try{document.execCommand("copy");done();}catch(e){alert("কপি করা যায়নি।");}
+ document.body.removeChild(ta);
 }
-
-function contactWhatsApp(){
- window.open("https://wa.me/"+STORE_WHATSAPP+"?text="+encodeURIComponent("Hello MY BAZAR BD!"),"_blank");
+function copyOrder(id){
+ const o=ordersCache.find(x=>String(x.id)===String(id));
+ if(!o)return;
+ const t="Name: "+(o.customer_name||"")+
+ "\nPhone: "+(o.phone||"")+
+ "\nAddress: "+(o.address||"")+
+ "\nProduct: "+(o.product_name||"")+" x "+(o.quantity||1)+
+ (o.size_color?"\nColor/Size: "+o.size_color:"")+
+ "\nCOD Amount: "+o.total_amount;
+ copyText(t);
 }
 
 function filterCategory(name,button){
@@ -231,66 +259,82 @@ function filterCategory(name,button){
 }
 
 async function loadProducts(){
- const {data,error}=await db.from("products")
- .select("*").eq("is_active",true).order("id",{ascending:false});
+ const {data,error}=await db.from("products").select("*").eq("is_active",true).order("id",{ascending:false});
  if(error){notice("Products load failed: "+error.message);return;}
  products=data||[];
  renderProducts();
 }
 
 function renderProducts(){
- const list=document.getElementById("productList");
+ const list=$("productList");
  const filtered=currentCategory==="all"?products:products.filter(p=>p.category===currentCategory);
  if(!filtered.length){list.innerHTML="<p>কোনো Product পাওয়া যায়নি।</p>";return;}
- list.innerHTML=filtered.map(p=>`
- <article class="product">
- <img src="${safe(p.image_url||"https://placehold.co/400x400?text=Product")}" alt="${safe(p.name)}">
- <h3>${safe(p.name)}</h3>
- <p class="price">৳ ${p.price}
- ${p.old_price?`<span class="old">৳ ${p.old_price}</span>`:""}</p>
- <p class="small">Stock: ${p.stock}</p>
- <button class="btn" onclick="openOrder(${Number(p.id)})">Order Now</button>
- </article>`).join("");
+ list.innerHTML=filtered.map(p=>{
+  const out=Number(p.stock)<=0;
+  return `<article class="product">
+  ${isAdmin?`<button class="dots" onclick="toggleMenu(${p.id},event)">⋮</button>
+  <div class="menu hidden" id="menu${p.id}">
+  <button onclick="editProduct(${p.id})">Edit</button>
+  <button onclick="toggleProduct(${p.id},false)">Hide</button>
+  <button onclick="deleteProduct(${p.id})">Delete</button></div>`:""}
+  <img onclick="openDetail(${p.id})" src="${safe(p.image_url||"https://placehold.co/400x400?text=Product")}" alt="${safe(p.name)}">
+  <h3 onclick="openDetail(${p.id})">${safe(p.name)}</h3>
+  <p class="price">৳ ${p.price}${p.old_price?`<span class="old">৳ ${p.old_price}</span>`:""}</p>
+  <p class="small ${out?"red":""}">${out?"Stock Out":"Stock: "+p.stock}</p>
+  <button class="btn" ${out?"disabled":""} onclick="openOrder(${p.id})">${out?"Stock Out":"Order Now"}</button>
+  <button class="btn dark" onclick="openChat()">Contact</button>
+  </article>`;}).join("");
 }
 
-function safe(value){
- return String(value??"").replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- }[c]));
+function toggleMenu(id,e){
+ e.stopPropagation();
+ document.querySelectorAll(".menu").forEach(m=>{if(m.id!=="menu"+id)m.classList.add("hidden");});
+ $("menu"+id).classList.toggle("hidden");
+}
+
+function openDetail(id){
+ const p=products.find(x=>Number(x.id)===Number(id));
+ if(!p)return;
+ const out=Number(p.stock)<=0,cols=colorList(p);
+ $("detailBody").innerHTML=`
+ <img src="${safe(p.image_url||"https://placehold.co/400x400?text=Product")}" style="width:100%;border-radius:8px;cursor:default">
+ <h2>${safe(p.name)}</h2>
+ <p class="price" style="margin-left:0">৳ ${p.price}${p.old_price?`<span class="old">৳ ${p.old_price}</span>`:""}</p>
+ ${cols.length?`<p><b>Color:</b> ${cols.map(safe).join(", ")}</p>`:""}
+ <p style="white-space:pre-line;line-height:1.6">${safe(p.description||"")}</p>
+ <p class="${out?"red":"small"}" style="margin-left:0">${out?"Stock Out":"Stock: "+p.stock}</p>
+ <button class="btn" style="width:100%" ${out?"disabled":""} onclick="closeModal('detailModal');openOrder(${Number(p.id)})">${out?"Stock Out":"Order Now"}</button>
+ <button class="btn dark" style="width:100%;margin-top:8px" onclick="openChat()">Contact</button>`;
+ $("detailModal").style.display="flex";
 }
 
 async function loadCategories(){
- const {data,error}=await db.from("categories")
- .select("*").eq("is_active",true).order("id");
+ const {data,error}=await db.from("categories").select("*").eq("is_active",true).order("id");
  if(error)return;
  categories=data||[];
- const list=document.getElementById("categoryList");
- list.innerHTML=`<button class="category active" onclick="filterCategory('all',this)">All Products</button>`+
+ $("categoryList").innerHTML=`<button class="category active" onclick="filterCategory('all',this)">All Products</button>`+
  categories.map(c=>`<button class="category" onclick="filterCategory('${safe(c.name).replace(/'/g,"&#39;")}',this)">${safe(c.name)}</button>`).join("");
- document.getElementById("pCategory").innerHTML=categories.map(c=>
- `<option value="${safe(c.name)}">${safe(c.name)}</option>`).join("");
+ $("pCategory").innerHTML=categories.map(c=>`<option value="${safe(c.name)}">${safe(c.name)}</option>`).join("");
 }
 
 async function loadBanners(){
- const {data,error}=await db.from("banners").select("*")
- .eq("is_active",true).order("sort_order");
+ const {data,error}=await db.from("banners").select("*").eq("is_active",true).order("sort_order");
  if(error)return;
  banners=data||[];
- const area=document.getElementById("bannerArea");
+ const area=$("bannerArea");
  if(!banners.length){area.innerHTML="";return;}
  area.innerHTML=banners.map((b,i)=>`
  <a href="${safe(b.link_url||"#")}" ${b.link_url?'target="_blank" rel="noopener"':""}>
  <img class="banner ${i===0?"active":""}" src="${safe(b.image_url)}" alt="${safe(b.title||"Banner")}">
- <div class="banner-text">${safe(b.title||"")} ${safe(b.subtitle||"")}</div>
- </a>`).join("");
+ <div class="banner-text">${safe(b.title||"")} ${safe(b.subtitle||"")}</div></a>`).join("");
  let index=0;
  if(window.bannerTimer)clearInterval(window.bannerTimer);
  window.bannerTimer=setInterval(()=>{
- const imgs=area.querySelectorAll(".banner");
- if(!imgs.length)return;
- imgs[index].classList.remove("active");
- index=(index+1)%imgs.length;
- imgs[index].classList.add("active");
+  const imgs=area.querySelectorAll(".banner");
+  if(!imgs.length)return;
+  imgs[index].classList.remove("active");
+  index=(index+1)%imgs.length;
+  imgs[index].classList.add("active");
  },4000);
 }
 
@@ -298,85 +342,75 @@ function openOrder(id){
  const p=products.find(x=>Number(x.id)===Number(id));
  if(!p)return;
  if(Number(p.stock)<=0){alert("এই Product বর্তমানে Stock-এ নেই।");return;}
- document.getElementById("oProduct").value=p.id;
- document.getElementById("oPrice").value=p.price;
- document.getElementById("oProductText").textContent=p.name+" — ৳"+p.price;
- document.getElementById("orderModal").style.display="flex";
+ const cols=colorList(p),sel=$("oColor");
+ if(cols.length){sel.innerHTML=cols.map(c=>`<option value="${safe(c)}">${safe(c)}</option>`).join("");sel.classList.remove("hidden");}
+ else{sel.innerHTML="";sel.classList.add("hidden");}
+ $("oProduct").value=p.id;
+ $("oProductText").textContent=p.name+" — ৳"+p.price;
+ $("orderModal").style.display="flex";
 }
 
-document.getElementById("orderForm").addEventListener("submit",async e=>{
+$("orderForm").addEventListener("submit",async e=>{
  e.preventDefault();
- const id=Number(document.getElementById("oProduct").value);
+ const id=Number($("oProduct").value);
  const p=products.find(x=>Number(x.id)===id);
  if(!p)return;
- const qty=Number(document.getElementById("oQuantity").value);
+ const qty=Number($("oQuantity").value);
  if(qty<1||qty>Number(p.stock)){alert("সঠিক Quantity দিন।");return;}
- const customer=document.getElementById("oName").value.trim();
- const phone=document.getElementById("oPhone").value.trim();
- const address=document.getElementById("oAddress").value.trim();
- const size=document.getElementById("oSize").value.trim();
- const total=Number(p.price)*qty;
-
+ const size=[$("oColor").value,$("oSize").value.trim()].filter(Boolean).join(" / ");
  const {data:orderId,error}=await db.rpc("place_order",{
-  p_product_id:id,
-  p_quantity:qty,
-  p_name:customer,
-  p_phone:phone,
-  p_address:address,
-  p_size:size
+  p_product_id:id,p_quantity:qty,
+  p_name:$("oName").value.trim(),p_phone:$("oPhone").value.trim(),
+  p_address:$("oAddress").value.trim(),p_size:size
  });
-
- const msg="NEW ORDER - MY BAZAR BD"+
- (orderId?"\nOrder ID: "+orderId:"")+
- "\nProduct: "+p.name+
- "\nPrice: ৳"+p.price+"\nQuantity: "+qty+
- "\nTotal: ৳"+total+"\nName: "+customer+
- "\nPhone: "+phone+"\nAddress: "+address+
- "\nSize/Color: "+size;
-
  if(error){
-  notice("Database Order Save হয়নি: "+error.message+
-  " WhatsApp দিয়ে Order পাঠাতে পারো।");
- }else{
-  notice("আপনার Order গ্রহণ করা হয়েছে! Order ID: "+orderId);
-  await loadProducts();
- }
- window.open("https://wa.me/"+STORE_WHATSAPP+"?text="+encodeURIComponent(msg),"_blank");
- closeModal("orderModal");
- e.target.reset();
-});
-
-async function adminLogin(){
- const email=document.getElementById("adminEmail").value.trim();
- const password=document.getElementById("adminPassword").value;
- const {data,error}=await db.auth.signInWithPassword({email,password});
- if(error){alert("Login failed: "+error.message);return;}
- currentUser=data.user;
- const {data:profile,error:profileError}=await db.from("profiles")
- .select("full_name,role").eq("id",currentUser.id).single();
- if(profileError||profile?.role!=="admin"){
-  await db.auth.signOut();
-  currentUser=null;
-  alert("এই Account Admin হিসেবে অনুমোদিত নয়।");
+  alert("দুঃখিত, অর্ডার হয়নি: "+error.message+"\nWhatsApp বা Live Chat-এ যোগাযোগ করুন।");
   return;
  }
- document.getElementById("loginArea").classList.add("hidden");
- document.getElementById("adminDashboard").classList.remove("hidden");
- document.getElementById("adminWelcome").textContent="Welcome "+(profile.full_name||"Admin");
+ closeModal("orderModal");
+ e.target.reset();
+ notice("আপনার Order গ্রহণ করা হয়েছে! Order ID: "+orderId);
+ alert("ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে। Order ID: "+orderId+"\nআমরা শীঘ্রই ফোন করে নিশ্চিত করব।");
+ await loadProducts();
+});
+
+async function checkAdmin(user){
+ const {data:profile}=await db.from("profiles").select("full_name,role").eq("id",user.id).single();
+ return profile&&profile.role==="admin"?profile:null;
+}
+async function showAdmin(profile){
+ isAdmin=true;
+ $("loginArea").classList.add("hidden");
+ $("adminDashboard").classList.remove("hidden");
+ $("adminWelcome").textContent="Welcome "+(profile.full_name||"Admin");
+ renderProducts();
  await loadAdminData();
+ if(window.orderTimer)clearInterval(window.orderTimer);
+ window.orderTimer=setInterval(()=>{if(isAdmin)loadAdminOrders();},30000);
+}
+
+async function adminLogin(){
+ const {data,error}=await db.auth.signInWithPassword({email:$("adminEmail").value.trim(),password:$("adminPassword").value});
+ if(error){alert("Login failed: "+error.message);return;}
+ currentUser=data.user;
+ const profile=await checkAdmin(currentUser);
+ if(!profile){await db.auth.signOut();currentUser=null;alert("এই Account Admin হিসেবে অনুমোদিত নয়।");return;}
+ await showAdmin(profile);
 }
 
 async function adminLogout(){
  await db.auth.signOut();
- currentUser=null;
- document.getElementById("loginArea").classList.remove("hidden");
- document.getElementById("adminDashboard").classList.add("hidden");
+ currentUser=null;isAdmin=false;lastOrderCount=null;
+ if(window.orderTimer)clearInterval(window.orderTimer);
+ $("loginArea").classList.remove("hidden");
+ $("adminDashboard").classList.add("hidden");
+ renderProducts();
 }
 
 function showAdminSection(id){
- ["productAdmin","bannerAdmin","categoryAdmin","orderAdmin"].forEach(x=>
- document.getElementById(x).classList.add("hidden"));
- document.getElementById(id).classList.remove("hidden");
+ ["productAdmin","bannerAdmin","categoryAdmin","orderAdmin"].forEach(x=>$(x).classList.add("hidden"));
+ $(id).classList.remove("hidden");
+ if(id==="orderAdmin"){document.title="MY BAZAR BD | Online Shopping";notice("");loadAdminOrders();}
 }
 
 async function loadAdminData(){
@@ -387,78 +421,76 @@ async function uploadImage(file){
  if(!file)return null;
  if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw Error("JPG, PNG অথবা WEBP ছবি দিন।");
  if(file.size>5*1024*1024)throw Error("ছবির Size 5 MB-এর বেশি হতে পারবে না।");
- const path=Date.now()+"-"+Math.random().toString(36).slice(2)+
- "."+file.name.split(".").pop().toLowerCase();
+ const path=Date.now()+"-"+Math.random().toString(36).slice(2)+"."+file.name.split(".").pop().toLowerCase();
  const {error}=await db.storage.from("my-bazar-images").upload(path,file,{upsert:false});
  if(error)throw error;
  return db.storage.from("my-bazar-images").getPublicUrl(path).data.publicUrl;
 }
 
 function clearProductForm(){
- ["editProductId","pName","pDescription","pPrice","pOldPrice","pStock"].forEach(id=>
- document.getElementById(id).value="");
- document.getElementById("pStock").value=10;
- document.getElementById("pImage").value="";
+ ["editProductId","pName","pDescription","pPrice","pOldPrice","pColors","pStock"].forEach(id=>$(id).value="");
+ $("pStock").value=10;
+ $("pImage").value="";
 }
 
 async function saveProduct(){
  try{
- const id=document.getElementById("editProductId").value;
- const name=document.getElementById("pName").value.trim();
- const price=Number(document.getElementById("pPrice").value);
- const stock=Number(document.getElementById("pStock").value);
- if(!name||price<=0||stock<0){alert("সঠিক Product তথ্য দিন।");return;}
- const file=document.getElementById("pImage").files[0];
- let image_url=null;
- if(file)image_url=await uploadImage(file);
- const payload={
- name,
- description:document.getElementById("pDescription").value,
- price,
- old_price:document.getElementById("pOldPrice").value?
- Number(document.getElementById("pOldPrice").value):null,
- category:document.getElementById("pCategory").value||null,
- stock,
- is_active:true
- };
- if(image_url)payload.image_url=image_url;
- let result=id?
- await db.from("products").update(payload).eq("id",Number(id)):
- await db.from("products").insert(payload);
- if(result.error)throw result.error;
- alert("Product Save হয়েছে!");
- clearProductForm();
- await loadProducts();await loadAdminProducts();
+  const id=$("editProductId").value;
+  const name=$("pName").value.trim();
+  const price=Number($("pPrice").value);
+  const stock=Number($("pStock").value);
+  if(!name||price<=0||stock<0){alert("সঠিক Product তথ্য দিন।");return;}
+  const file=$("pImage").files[0];
+  let image_url=null;
+  if(file)image_url=await uploadImage(file);
+  const payload={
+   name,description:$("pDescription").value,price,
+   old_price:$("pOldPrice").value?Number($("pOldPrice").value):null,
+   colors:$("pColors").value.trim()||null,
+   category:$("pCategory").value||null,stock,is_active:true
+  };
+  if(image_url)payload.image_url=image_url;
+  const result=id?await db.from("products").update(payload).eq("id",Number(id)):await db.from("products").insert(payload);
+  if(result.error)throw result.error;
+  alert("Product Save হয়েছে!");
+  clearProductForm();
+  await loadProducts();await loadAdminProducts();
  }catch(e){alert("Error: "+e.message);}
 }
 
 async function loadAdminProducts(){
  const {data,error}=await db.from("products").select("*").order("id",{ascending:false});
  if(error)return;
- document.getElementById("adminProducts").innerHTML=(data||[]).map(p=>`
+ $("adminProducts").innerHTML=(data||[]).map(p=>`
  <div class="admin-item">
  <b>${safe(p.name)}</b> — ৳${p.price}
- <p class="small">Stock: ${p.stock} | ${p.is_active?"Active":"Inactive"}</p>
+ <p class="small" style="margin-left:0">Stock: ${p.stock} | ${p.is_active?"Active":"Hidden"}</p>
  <button class="btn dark" onclick="editProduct(${p.id})">Edit</button>
+ <button class="btn dark" onclick="toggleProduct(${p.id},${!p.is_active})">${p.is_active?"Hide":"Show"}</button>
  <button class="btn" onclick="deleteProduct(${p.id})">Delete</button>
  </div>`).join("");
 }
 
-async function editProduct(id){
- const p=products.find(x=>Number(x.id)===Number(id));
- if(!p){const r=await db.from("products").select("*").eq("id",id).single();if(r.error)return;return fillProduct(r.data);}
- fillProduct(p);
+async function toggleProduct(id,active){
+ const {error}=await db.from("products").update({is_active:active}).eq("id",id);
+ if(error){alert(error.message);return;}
+ await loadProducts();await loadAdminProducts();
 }
-function fillProduct(p){
- document.getElementById("editProductId").value=p.id;
- document.getElementById("pName").value=p.name||"";
- document.getElementById("pDescription").value=p.description||"";
- document.getElementById("pPrice").value=p.price;
- document.getElementById("pOldPrice").value=p.old_price||"";
- document.getElementById("pCategory").value=p.category||"";
- document.getElementById("pStock").value=p.stock;
- document.getElementById("pImage").value="";
- document.getElementById("productAdmin").scrollIntoView({behavior:"smooth"});
+
+async function editProduct(id){
+ let p=products.find(x=>Number(x.id)===Number(id));
+ if(!p){const r=await db.from("products").select("*").eq("id",id).single();if(r.error)return;p=r.data;}
+ openAdmin();showAdminSection("productAdmin");
+ $("editProductId").value=p.id;
+ $("pName").value=p.name||"";
+ $("pDescription").value=p.description||"";
+ $("pPrice").value=p.price;
+ $("pOldPrice").value=p.old_price||"";
+ $("pColors").value=p.colors||"";
+ $("pCategory").value=p.category||"";
+ $("pStock").value=p.stock;
+ $("pImage").value="";
+ $("productAdmin").scrollIntoView({behavior:"smooth"});
 }
 
 async function deleteProduct(id){
@@ -470,27 +502,22 @@ async function deleteProduct(id){
 
 async function saveBanner(){
  try{
- const file=document.getElementById("bImage").files[0];
- if(!file)throw Error("Banner Image নির্বাচন করো।");
- const image_url=await uploadImage(file);
- const {error}=await db.from("banners").insert({
- title:document.getElementById("bTitle").value,
- subtitle:document.getElementById("bSubtitle").value,
- image_url,
- link_url:document.getElementById("bLink").value||null,
- is_active:true,
- sort_order:0
- });
- if(error)throw error;
- alert("Banner Upload হয়েছে!");
- await loadBanners();await loadAdminBanners();
+  const file=$("bImage").files[0];
+  if(!file)throw Error("Banner Image নির্বাচন করো।");
+  const image_url=await uploadImage(file);
+  const {error}=await db.from("banners").insert({
+   title:$("bTitle").value,subtitle:$("bSubtitle").value,image_url,
+   link_url:$("bLink").value||null,is_active:true,sort_order:0
+  });
+  if(error)throw error;
+  alert("Banner Upload হয়েছে!");
+  await loadBanners();await loadAdminBanners();
  }catch(e){alert(e.message);}
 }
-
 async function loadAdminBanners(){
  const {data,error}=await db.from("banners").select("*").order("id",{ascending:false});
  if(error)return;
- document.getElementById("adminBanners").innerHTML=(data||[]).map(b=>`
+ $("adminBanners").innerHTML=(data||[]).map(b=>`
  <div class="admin-item">${safe(b.title||"Banner")}
  <button class="btn" onclick="deleteBanner(${b.id})">Delete</button></div>`).join("");
 }
@@ -502,17 +529,17 @@ async function deleteBanner(id){
 }
 
 async function saveCategory(){
- const name=document.getElementById("cName").value.trim();
+ const name=$("cName").value.trim();
  if(!name)return alert("Category Name লিখো।");
  const {error}=await db.from("categories").insert({name,is_active:true});
  if(error){alert(error.message);return;}
- document.getElementById("cName").value="";
+ $("cName").value="";
  await loadCategories();await loadAdminCategories();
 }
 async function loadAdminCategories(){
  const {data,error}=await db.from("categories").select("*").order("id");
  if(error)return;
- document.getElementById("adminCategories").innerHTML=(data||[]).map(c=>`
+ $("adminCategories").innerHTML=(data||[]).map(c=>`
  <div class="admin-item">${safe(c.name)}
  <button class="btn" onclick="deleteCategory(${c.id})">Delete</button></div>`).join("");
 }
@@ -525,27 +552,36 @@ async function deleteCategory(id){
 
 async function loadAdminOrders(){
  const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false});
- if(error){document.getElementById("adminOrders").textContent=error.message;return;}
- document.getElementById("adminOrders").innerHTML=(data||[]).map(o=>`
- <div class="admin-item">
- <b>Order #${safe(o.id)}</b>
- <p><b>${safe(o.product_name||"—")}</b> × ${safe(o.quantity||1)}${o.size_color?" | "+safe(o.size_color):""}</p>
- <p>${safe(o.customer_name)} | ${safe(o.phone)}</p>
- <p>${safe(o.address)}</p>
- <p>Total: ৳${o.total_amount}</p>
- <span class="status">${safe(o.status||"pending")}</span>
- <select id="status${o.id}">
- <option value="pending">Pending</option>
- <option value="confirmed">Confirmed</option>
- <option value="shipped">Shipped</option>
- <option value="delivered">Delivered</option>
- <option value="cancelled">Cancelled</option>
- </select>
- <button class="btn" onclick="updateOrder('${o.id}')">Update Status</button>
- </div>`).join("");
+ if(error){$("adminOrders").textContent=error.message;return;}
+ const list=data||[];
+ ordersCache=list;
+ const pending=list.filter(o=>(o.status||"pending")==="pending").length;
+ $("ordersBtn").textContent="Orders"+(pending?" ("+pending+")":"");
+ if(lastOrderCount!==null&&list.length>lastOrderCount){
+  beep();
+  notice("🔔 নতুন অর্ডার এসেছে! Orders বাটনে দেখুন।");
+  document.title="🔔 নতুন অর্ডার! | MY BAZAR BD";
+ }
+ lastOrderCount=list.length;
+ const opts=["pending","confirmed","shipped","delivered","cancelled"];
+ $("adminOrders").innerHTML=list.map(o=>{
+  const st=o.status||"pending";
+  return `<div class="admin-item ${st==="pending"?"new":""}">
+  <b>Order #${safe(o.id)}</b> ${st==="pending"?"🆕":""}
+  <p><b>${safe(o.product_name||"—")}</b> × ${safe(o.quantity||1)}${o.size_color?" | "+safe(o.size_color):""}</p>
+  <p>${safe(o.customer_name)} | ${safe(o.phone)}</p>
+  <p>${safe(o.address)}</p>
+  <p>Total (COD): ৳${o.total_amount}</p>
+  <span class="status">${safe(st)}</span>
+  <select id="status${o.id}">
+  ${opts.map(s=>`<option value="${s}" ${s===st?"selected":""}>${s[0].toUpperCase()+s.slice(1)}</option>`).join("")}
+  </select>
+  <button class="btn" onclick="updateOrder('${o.id}')">Update Status</button>
+  <button class="btn green" onclick="copyOrder('${o.id}')">📋 Copy</button>
+  </div>`;}).join("");
 }
 async function updateOrder(id){
- const status=document.getElementById("status"+id).value;
+ const status=$("status"+id).value;
  const {error}=await db.from("orders").update({status}).eq("id",id);
  if(error){alert(error.message);return;}
  alert("Order Status Updated!");
@@ -557,16 +593,9 @@ async function initialize(){
  const {data}=await db.auth.getSession();
  if(data.session){
   currentUser=data.session.user;
-  const {data:profile}=await db.from("profiles").select("full_name,role").eq("id",currentUser.id).single();
-  if(profile?.role==="admin"){
-   document.getElementById("loginArea").classList.add("hidden");
-   document.getElementById("adminDashboard").classList.remove("hidden");
-   document.getElementById("adminWelcome").textContent="Welcome "+(profile.full_name||"Admin");
-   await loadAdminData();
-  }else{
-   await db.auth.signOut();
-   currentUser=null;
-  }
+  const profile=await checkAdmin(currentUser);
+  if(profile){await showAdmin(profile);}
+  else{await db.auth.signOut();currentUser=null;}
  }
 }
 initialize();
@@ -584,6 +613,5 @@ s1.setAttribute('crossorigin','*');
 s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
-
 </body>
-</html>
+ </html>
