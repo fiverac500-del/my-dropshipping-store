@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MY BAZAR BD | Online Shopping</title>
+<meta name="description" content="MY BAZAR BD — বাংলাদেশের অনলাইন শপ। সাশ্রয়ী দামে প্রয়োজনীয় পণ্য, ঘরে বসে অর্ডার করুন।">
+<meta property="og:title" content="MY BAZAR BD | Online Shopping">
+<meta property="og:description" content="সাশ্রয়ী দামে প্রয়োজনীয় পণ্য, ঘরে বসে অর্ডার করুন।">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#080808">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
@@ -64,6 +69,7 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 .chip{border:1px solid #ccc;background:#fff;padding:8px 14px;border-radius:20px;margin:3px 4px 3px 0;cursor:pointer;font-size:13px}
 .chip.on{background:#ed1728;color:#fff;border-color:#ed1728}
 .dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #888;margin-right:6px;vertical-align:middle}
+.sum{background:#f7f7f7;border-radius:8px;padding:10px;font-size:14px;line-height:1.8;white-space:pre-line;margin:8px 0}
 @media(min-width:650px){.products{grid-template-columns:repeat(4,minmax(0,1fr))}.banner{height:350px}}
 </style>
 </head>
@@ -195,10 +201,16 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <input id="oName" placeholder="আপনার নাম" required>
 <input id="oPhone" type="tel" placeholder="মোবাইল নম্বর" required>
 <textarea id="oAddress" placeholder="সম্পূর্ণ ডেলিভারি ঠিকানা" required></textarea>
+<select id="oArea" required>
+<option value="">ডেলিভারি এলাকা বেছে নিন</option>
+<option value="dhaka">ঢাকার ভেতরে</option>
+<option value="outside">ঢাকার বাইরে</option>
+</select>
 <select id="oColor" class="hidden"></select>
 <select id="oSizeSel" class="hidden"></select>
 <input id="oQuantity" type="number" min="1" value="1" required>
-<p class="small">ক্যাশ অন ডেলিভারি: পণ্য হাতে পেয়ে টাকা দিন।</p>
+<div class="sum" id="oSummary"></div>
+<p class="small" style="margin-left:0">ক্যাশ অন ডেলিভারি: পণ্য হাতে পেয়ে টাকা দিন।</p>
 <button class="btn" type="submit" style="width:100%">Submit Order</button>
 </form>
 </div>
@@ -209,6 +221,8 @@ const SUPABASE_URL="https://lrihrtqyicygaqbmhfee.supabase.co";
 const SUPABASE_KEY="sb_publishable_uGeCiYaeuR9WuOcbnI7e1w_8PLNTdc6";
 const STORE_WHATSAPP="8801849482239";
 const PLACEHOLDER="https://placehold.co/400x400?text=Product";
+const DELIVERY={dhaka:70,outside:120};
+const COD_RATE=0.01;
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let products=[],categories=[],banners=[],ordersCache=[];
@@ -234,6 +248,27 @@ function imgs(p){
 }
 function dot(c){
  return (window.CSS&&CSS.supports&&CSS.supports("color",c))?`<i class="dot" style="background:${safe(c)}"></i>`:"";
+}
+function areaName(a){return a==="dhaka"?"ঢাকার ভেতরে":(a==="outside"?"ঢাকার বাইরে":"");}
+function calc(price,qty,area){
+ const sub=Number(price)*Number(qty);
+ const del=area?DELIVERY[area]:0;
+ const cod=area?Math.round((sub+del)*COD_RATE):0;
+ return {sub,del,cod,total:sub+del+cod};
+}
+function updateSummary(){
+ const id=Number($("oProduct").value);
+ const p=products.find(x=>Number(x.id)===id);
+ const el=$("oSummary");
+ if(!p){el.textContent="";return;}
+ const area=$("oArea").value;
+ const qty=Math.max(1,Number($("oQuantity").value)||1);
+ if(!area){
+  el.textContent="ডেলিভারি এলাকা বেছে নিলে মোট দাম দেখাবে।\n(ডেলিভারি: ঢাকার ভেতরে ৳"+DELIVERY.dhaka+", ঢাকার বাইরে ৳"+DELIVERY.outside+" | ক্যাশ অন ডেলিভারি চার্জ ১%)";
+  return;
+ }
+ const c=calc(p.price,qty,area);
+ el.textContent="পণ্যের দাম: ৳"+c.sub+"\nডেলিভারি চার্জ: ৳"+c.del+"\nক্যাশ অন ডেলিভারি চার্জ (১%): ৳"+c.cod+"\nমোট দিতে হবে: ৳"+c.total;
 }
 
 function beep(){
@@ -266,9 +301,10 @@ function copyOrder(id){
  const t="Name: "+(o.customer_name||"")+
  "\nPhone: "+(o.phone||"")+
  "\nAddress: "+(o.address||"")+
+ (o.area?"\nArea: "+areaName(o.area):"")+
  "\nProduct: "+(o.product_name||"")+" x "+(o.quantity||1)+
  (o.size_color?"\nColor/Size: "+o.size_color:"")+
- "\nCOD Amount: "+o.total_amount;
+ "\nCOD Amount: "+Number(o.total_amount);
  copyText(t);
 }
 
@@ -344,6 +380,7 @@ function openDetail(id){
  ${detailCols.length?`<p style="margin:10px 0 4px"><b>রঙ বেছে নিন:</b></p><div>${detailCols.map((c,i)=>`<button class="chip" onclick="pickOpt('color',${i},this)">${dot(c)}${safe(c)}</button>`).join("")}</div>`:""}
  ${detailSzs.length?`<p style="margin:10px 0 4px"><b>সাইজ বেছে নিন:</b></p><div>${detailSzs.map((s,i)=>`<button class="chip" onclick="pickOpt('size',${i},this)">${safe(s)}</button>`).join("")}</div>`:""}
  <p style="white-space:pre-line;line-height:1.6">${safe(p.description||"")}</p>
+ <p class="small" style="margin-left:0">🚚 ডেলিভারি: ঢাকার ভেতরে ৳${DELIVERY.dhaka}, ঢাকার বাইরে ৳${DELIVERY.outside} | ক্যাশ অন ডেলিভারি চার্জ ১%</p>
  <p class="${out?"red":"small"}" style="margin-left:0">${out?"Stock Out":"Stock: "+p.stock}</p>
  <button class="btn" style="width:100%" ${out?"disabled":""} onclick="goOrder(${Number(p.id)})">${out?"Stock Out":"Order Now"}</button>
  <button class="btn dark" style="width:100%;margin-top:8px" onclick="openChat()">Contact</button>`;
@@ -396,9 +433,15 @@ function openOrder(id,pre){
  fillSel("oColor",colorList(p),"রঙ বেছে নিন",pre.color);
  fillSel("oSizeSel",sizeList(p),"সাইজ বেছে নিন",pre.size);
  $("oProduct").value=p.id;
+ $("oArea").value="";
+ $("oQuantity").value=1;
  $("oProductText").textContent=p.name+" — ৳"+p.price;
+ updateSummary();
  $("orderModal").style.display="flex";
 }
+
+$("oArea").addEventListener("change",updateSummary);
+$("oQuantity").addEventListener("input",updateSummary);
 
 $("orderForm").addEventListener("submit",async e=>{
  e.preventDefault();
@@ -407,20 +450,23 @@ $("orderForm").addEventListener("submit",async e=>{
  if(!p)return;
  const qty=Number($("oQuantity").value);
  if(qty<1||qty>Number(p.stock)){alert("সঠিক Quantity দিন।");return;}
+ const area=$("oArea").value;
+ if(!area){alert("ডেলিভারি এলাকা বেছে নিন।");return;}
  const size=[$("oColor").value,$("oSizeSel").value].filter(Boolean).join(" / ");
  const {data:orderId,error}=await db.rpc("place_order",{
   p_product_id:id,p_quantity:qty,
   p_name:$("oName").value.trim(),p_phone:$("oPhone").value.trim(),
-  p_address:$("oAddress").value.trim(),p_size:size
+  p_address:$("oAddress").value.trim(),p_size:size,p_area:area
  });
  if(error){
   alert("দুঃখিত, অর্ডার হয়নি: "+error.message+"\nWhatsApp বা Live Chat-এ যোগাযোগ করুন।");
   return;
  }
+ const c=calc(p.price,qty,area);
  closeModal("orderModal");
  e.target.reset();
  notice("আপনার Order গ্রহণ করা হয়েছে! Order ID: "+orderId);
- alert("ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে। Order ID: "+orderId+"\nআমরা শীঘ্রই ফোন করে নিশ্চিত করব।");
+ alert("ধন্যবাদ! আপনার অর্ডার গ্রহণ করা হয়েছে।\nOrder ID: "+orderId+"\nমোট দিতে হবে (ক্যাশ অন ডেলিভারি): ৳"+c.total+"\nআমরা শীঘ্রই ফোন করে নিশ্চিত করব।");
  await loadProducts();
 });
 
@@ -627,12 +673,14 @@ async function loadAdminOrders(){
  const opts=["pending","confirmed","shipped","delivered","cancelled"];
  $("adminOrders").innerHTML=list.map(o=>{
   const st=o.status||"pending";
+  const brk=o.delivery_charge!=null?`<p class="small" style="margin-left:0">${areaName(o.area)} | পণ্য ৳${Number(o.subtotal)} + ডেলিভারি ৳${Number(o.delivery_charge)} + COD চার্জ ৳${Number(o.cod_charge)}</p>`:"";
   return `<div class="admin-item ${st==="pending"?"new":""}">
   <b>Order #${safe(o.id)}</b> ${st==="pending"?"🆕":""}
   <p><b>${safe(o.product_name||"—")}</b> × ${safe(o.quantity||1)}${o.size_color?" | "+safe(o.size_color):""}</p>
   <p>${safe(o.customer_name)} | ${safe(o.phone)}</p>
   <p>${safe(o.address)}</p>
-  <p>Total (COD): ৳${o.total_amount}</p>
+  ${brk}
+  <p>Total (COD): ৳${Number(o.total_amount)}</p>
   <span class="status">${safe(st)}</span>
   <select id="status${o.id}">
   ${opts.map(s=>`<option value="${s}" ${s===st?"selected":""}>${s[0].toUpperCase()+s.slice(1)}</option>`).join("")}
