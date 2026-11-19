@@ -56,6 +56,14 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 .status{padding:5px;background:#eee;border-radius:5px;font-size:12px}
 .hidden{display:none!important}
 #message{padding:10px;color:#168348;font-weight:bold}
+.thumbs{display:flex;gap:8px;overflow:auto;margin:10px 0;padding-top:6px}
+.thumbs img{width:58px;height:58px;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;flex:none}
+.thumbs img.on{border-color:#ed1728}
+.th{position:relative;flex:none}
+.th b{position:absolute;top:-6px;right:-6px;background:#ed1728;color:#fff;border-radius:50%;width:20px;height:20px;text-align:center;font-size:12px;line-height:20px;cursor:pointer}
+.chip{border:1px solid #ccc;background:#fff;padding:8px 14px;border-radius:20px;margin:3px 4px 3px 0;cursor:pointer;font-size:13px}
+.chip.on{background:#ed1728;color:#fff;border-color:#ed1728}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #888;margin-right:6px;vertical-align:middle}
 @media(min-width:650px){.products{grid-template-columns:repeat(4,minmax(0,1fr))}.banner{height:350px}}
 </style>
 </head>
@@ -125,11 +133,13 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <textarea id="pDescription" placeholder="Description"></textarea>
 <input id="pPrice" type="number" placeholder="Price">
 <input id="pOldPrice" type="number" placeholder="Old Price">
-<input id="pColors" placeholder="Colors (কমা দিয়ে, যেমন: Black, White)">
+<input id="pColors" placeholder="Colors (কমা দিয়ে: Black, White, Blue)">
+<input id="pSizes" placeholder="Sizes (কমা দিয়ে: S, M, L বা 39, 40, 41) — না থাকলে ফাঁকা">
 <select id="pCategory"></select>
 <input id="pStock" type="number" min="0" value="10" placeholder="Stock">
-<label>Product Image</label>
-<input id="pImage" type="file" accept="image/jpeg,image/png,image/webp">
+<label>Product Images (সর্বোচ্চ ৬টি, একসাথে অনেকগুলো বাছাই করা যায়)</label>
+<input id="pImage" type="file" multiple accept="image/jpeg,image/png,image/webp">
+<div id="imgPreview" class="thumbs"></div>
 <button class="btn" onclick="saveProduct()">Save Product</button>
 <button class="btn dark" onclick="clearProductForm()">Clear</button>
 <div id="adminProducts"></div>
@@ -186,8 +196,8 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 <input id="oPhone" type="tel" placeholder="মোবাইল নম্বর" required>
 <textarea id="oAddress" placeholder="সম্পূর্ণ ডেলিভারি ঠিকানা" required></textarea>
 <select id="oColor" class="hidden"></select>
+<select id="oSizeSel" class="hidden"></select>
 <input id="oQuantity" type="number" min="1" value="1" required>
-<input id="oSize" placeholder="Size (যদি থাকে)">
 <p class="small">ক্যাশ অন ডেলিভারি: পণ্য হাতে পেয়ে টাকা দিন।</p>
 <button class="btn" type="submit" style="width:100%">Submit Order</button>
 </form>
@@ -198,10 +208,12 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 const SUPABASE_URL="https://lrihrtqyicygaqbmhfee.supabase.co";
 const SUPABASE_KEY="sb_publishable_uGeCiYaeuR9WuOcbnI7e1w_8PLNTdc6";
 const STORE_WHATSAPP="8801849482239";
+const PLACEHOLDER="https://placehold.co/400x400?text=Product";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let products=[],categories=[],banners=[],ordersCache=[];
 let currentCategory="all",currentUser=null,isAdmin=false,lastOrderCount=null;
+let editImages=[],detailImgs=[],detailCols=[],detailSzs=[],detailSel={color:"",size:""};
 
 function $(id){return document.getElementById(id);}
 function notice(t){$("message").textContent=t;}
@@ -213,7 +225,16 @@ function openChat(){
  else{alert("Chat লোড হচ্ছে, একটু পরে আবার চেষ্টা করুন।");}
 }
 function safe(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function colorList(p){return (p.colors||"").split(",").map(s=>s.trim()).filter(Boolean);}
+function splitList(s){return (s||"").split(",").map(x=>x.trim()).filter(Boolean);}
+function colorList(p){return splitList(p.colors);}
+function sizeList(p){return splitList(p.sizes);}
+function imgs(p){
+ if(Array.isArray(p.images)&&p.images.length)return p.images;
+ return p.image_url?[p.image_url]:[];
+}
+function dot(c){
+ return (window.CSS&&CSS.supports&&CSS.supports("color",c))?`<i class="dot" style="background:${safe(c)}"></i>`:"";
+}
 
 function beep(){
  try{
@@ -277,7 +298,7 @@ function renderProducts(){
   <button onclick="editProduct(${p.id})">Edit</button>
   <button onclick="toggleProduct(${p.id},false)">Hide</button>
   <button onclick="deleteProduct(${p.id})">Delete</button></div>`:""}
-  <img onclick="openDetail(${p.id})" src="${safe(p.image_url||"https://placehold.co/400x400?text=Product")}" alt="${safe(p.name)}">
+  <img onclick="openDetail(${p.id})" src="${safe(imgs(p)[0]||PLACEHOLDER)}" alt="${safe(p.name)}">
   <h3 onclick="openDetail(${p.id})">${safe(p.name)}</h3>
   <p class="price">৳ ${p.price}${p.old_price?`<span class="old">৳ ${p.old_price}</span>`:""}</p>
   <p class="small ${out?"red":""}">${out?"Stock Out":"Stock: "+p.stock}</p>
@@ -292,18 +313,39 @@ function toggleMenu(id,e){
  $("menu"+id).classList.toggle("hidden");
 }
 
+function setMain(i){
+ $("mainImg").src=detailImgs[i];
+ document.querySelectorAll("#detailThumbs img").forEach((el,k)=>el.classList.toggle("on",k===i));
+}
+function pickOpt(type,i,btn){
+ detailSel[type]=(type==="color"?detailCols:detailSzs)[i];
+ btn.parentElement.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));
+ btn.classList.add("on");
+}
+function goOrder(id){
+ if(detailCols.length&&!detailSel.color){alert("আগে একটা রঙ বেছে নিন।");return;}
+ if(detailSzs.length&&!detailSel.size){alert("আগে একটা সাইজ বেছে নিন।");return;}
+ const pre={color:detailSel.color,size:detailSel.size};
+ closeModal("detailModal");
+ openOrder(id,pre);
+}
+
 function openDetail(id){
  const p=products.find(x=>Number(x.id)===Number(id));
  if(!p)return;
- const out=Number(p.stock)<=0,cols=colorList(p);
+ const out=Number(p.stock)<=0;
+ detailImgs=imgs(p);detailCols=colorList(p);detailSzs=sizeList(p);
+ detailSel={color:"",size:""};
  $("detailBody").innerHTML=`
- <img src="${safe(p.image_url||"https://placehold.co/400x400?text=Product")}" style="width:100%;border-radius:8px;cursor:default">
+ <img id="mainImg" src="${safe(detailImgs[0]||PLACEHOLDER)}" style="width:100%;border-radius:8px">
+ ${detailImgs.length>1?`<div class="thumbs" id="detailThumbs">${detailImgs.map((u,i)=>`<img src="${safe(u)}" class="${i===0?"on":""}" onclick="setMain(${i})">`).join("")}</div>`:""}
  <h2>${safe(p.name)}</h2>
  <p class="price" style="margin-left:0">৳ ${p.price}${p.old_price?`<span class="old">৳ ${p.old_price}</span>`:""}</p>
- ${cols.length?`<p><b>Color:</b> ${cols.map(safe).join(", ")}</p>`:""}
+ ${detailCols.length?`<p style="margin:10px 0 4px"><b>রঙ বেছে নিন:</b></p><div>${detailCols.map((c,i)=>`<button class="chip" onclick="pickOpt('color',${i},this)">${dot(c)}${safe(c)}</button>`).join("")}</div>`:""}
+ ${detailSzs.length?`<p style="margin:10px 0 4px"><b>সাইজ বেছে নিন:</b></p><div>${detailSzs.map((s,i)=>`<button class="chip" onclick="pickOpt('size',${i},this)">${safe(s)}</button>`).join("")}</div>`:""}
  <p style="white-space:pre-line;line-height:1.6">${safe(p.description||"")}</p>
  <p class="${out?"red":"small"}" style="margin-left:0">${out?"Stock Out":"Stock: "+p.stock}</p>
- <button class="btn" style="width:100%" ${out?"disabled":""} onclick="closeModal('detailModal');openOrder(${Number(p.id)})">${out?"Stock Out":"Order Now"}</button>
+ <button class="btn" style="width:100%" ${out?"disabled":""} onclick="goOrder(${Number(p.id)})">${out?"Stock Out":"Order Now"}</button>
  <button class="btn dark" style="width:100%;margin-top:8px" onclick="openChat()">Contact</button>`;
  $("detailModal").style.display="flex";
 }
@@ -330,21 +372,29 @@ async function loadBanners(){
  let index=0;
  if(window.bannerTimer)clearInterval(window.bannerTimer);
  window.bannerTimer=setInterval(()=>{
-  const imgs=area.querySelectorAll(".banner");
-  if(!imgs.length)return;
-  imgs[index].classList.remove("active");
-  index=(index+1)%imgs.length;
-  imgs[index].classList.add("active");
+  const im=area.querySelectorAll(".banner");
+  if(!im.length)return;
+  im[index].classList.remove("active");
+  index=(index+1)%im.length;
+  im[index].classList.add("active");
  },4000);
 }
 
-function openOrder(id){
+function fillSel(id,arr,label,val){
+ const s=$(id);
+ if(arr.length){
+  s.innerHTML=`<option value="">${label}</option>`+arr.map(c=>`<option value="${safe(c)}">${safe(c)}</option>`).join("");
+  s.value=val||"";s.required=true;s.classList.remove("hidden");
+ }else{s.innerHTML="";s.required=false;s.classList.add("hidden");}
+}
+
+function openOrder(id,pre){
  const p=products.find(x=>Number(x.id)===Number(id));
  if(!p)return;
  if(Number(p.stock)<=0){alert("এই Product বর্তমানে Stock-এ নেই।");return;}
- const cols=colorList(p),sel=$("oColor");
- if(cols.length){sel.innerHTML=cols.map(c=>`<option value="${safe(c)}">${safe(c)}</option>`).join("");sel.classList.remove("hidden");}
- else{sel.innerHTML="";sel.classList.add("hidden");}
+ pre=pre||{};
+ fillSel("oColor",colorList(p),"রঙ বেছে নিন",pre.color);
+ fillSel("oSizeSel",sizeList(p),"সাইজ বেছে নিন",pre.size);
  $("oProduct").value=p.id;
  $("oProductText").textContent=p.name+" — ৳"+p.price;
  $("orderModal").style.display="flex";
@@ -357,7 +407,7 @@ $("orderForm").addEventListener("submit",async e=>{
  if(!p)return;
  const qty=Number($("oQuantity").value);
  if(qty<1||qty>Number(p.stock)){alert("সঠিক Quantity দিন।");return;}
- const size=[$("oColor").value,$("oSize").value.trim()].filter(Boolean).join(" / ");
+ const size=[$("oColor").value,$("oSizeSel").value].filter(Boolean).join(" / ");
  const {data:orderId,error}=await db.rpc("place_order",{
   p_product_id:id,p_quantity:qty,
   p_name:$("oName").value.trim(),p_phone:$("oPhone").value.trim(),
@@ -427,10 +477,17 @@ async function uploadImage(file){
  return db.storage.from("my-bazar-images").getPublicUrl(path).data.publicUrl;
 }
 
+function renderPreview(){
+ $("imgPreview").innerHTML=editImages.map((u,i)=>
+ `<span class="th"><img src="${safe(u)}"><b onclick="removeImg(${i})">✕</b></span>`).join("");
+}
+function removeImg(i){editImages.splice(i,1);renderPreview();}
+
 function clearProductForm(){
- ["editProductId","pName","pDescription","pPrice","pOldPrice","pColors","pStock"].forEach(id=>$(id).value="");
+ ["editProductId","pName","pDescription","pPrice","pOldPrice","pColors","pSizes","pStock"].forEach(id=>$(id).value="");
  $("pStock").value=10;
  $("pImage").value="";
+ editImages=[];renderPreview();
 }
 
 async function saveProduct(){
@@ -440,16 +497,18 @@ async function saveProduct(){
   const price=Number($("pPrice").value);
   const stock=Number($("pStock").value);
   if(!name||price<=0||stock<0){alert("সঠিক Product তথ্য দিন।");return;}
-  const file=$("pImage").files[0];
-  let image_url=null;
-  if(file)image_url=await uploadImage(file);
+  const files=Array.from($("pImage").files);
+  if(editImages.length+files.length>6){alert("সর্বোচ্চ ৬টি ছবি দেওয়া যাবে।");return;}
+  const urls=editImages.slice();
+  for(const f of files){urls.push(await uploadImage(f));}
   const payload={
    name,description:$("pDescription").value,price,
    old_price:$("pOldPrice").value?Number($("pOldPrice").value):null,
    colors:$("pColors").value.trim()||null,
-   category:$("pCategory").value||null,stock,is_active:true
+   sizes:$("pSizes").value.trim()||null,
+   category:$("pCategory").value||null,stock,is_active:true,
+   images:urls,image_url:urls[0]||null
   };
-  if(image_url)payload.image_url=image_url;
   const result=id?await db.from("products").update(payload).eq("id",Number(id)):await db.from("products").insert(payload);
   if(result.error)throw result.error;
   alert("Product Save হয়েছে!");
@@ -487,9 +546,11 @@ async function editProduct(id){
  $("pPrice").value=p.price;
  $("pOldPrice").value=p.old_price||"";
  $("pColors").value=p.colors||"";
+ $("pSizes").value=p.sizes||"";
  $("pCategory").value=p.category||"";
  $("pStock").value=p.stock;
  $("pImage").value="";
+ editImages=imgs(p).slice();renderPreview();
  $("productAdmin").scrollIntoView({behavior:"smooth"});
 }
 
@@ -614,4 +675,4 @@ s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
 </body>
- </html>
+</html>
