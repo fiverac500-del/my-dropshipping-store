@@ -28,10 +28,14 @@ main{max-width:1150px;margin:auto;padding:20px 14px}
 .btn.green{background:#168348}
 .btn:disabled{background:#999;cursor:not-allowed}
 .section{text-align:center;margin:30px 0 20px}
-.banner{display:none;width:100%;height:220px;object-fit:cover;border-radius:12px;background:#ddd}
-.banner.active{display:block}
 .banner-area{position:relative}
-.banner-text{position:absolute;bottom:15px;left:15px;color:white;background:#0009;padding:10px;border-radius:6px}
+.slide{display:none;position:relative}
+.slide.active{display:block}
+.banner{display:block;width:100%;height:220px;object-fit:cover;border-radius:12px;background:#ddd}
+.banner-text{position:absolute;bottom:15px;left:15px;color:white;background:#0009;padding:10px;border-radius:6px;max-width:80%}
+.bdots{text-align:center;margin-top:8px}
+.bdot{width:10px;height:10px;border-radius:50%;border:0;background:#ccc;margin:0 4px;padding:0;cursor:pointer}
+.bdot.on{background:#ed1728}
 .categories{display:flex;gap:10px;overflow:auto;padding:8px 0}
 .category{background:white;border:1px solid #ddd;padding:13px 18px;border-radius:8px;white-space:nowrap;cursor:pointer}
 .category.active{background:#ed1728;color:white}
@@ -61,6 +65,9 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 .admin-grid button{width:100%}
 .admin-item{border-bottom:1px solid #ddd;padding:10px 0}
 .admin-item.new{border-left:4px solid #ed1728;padding-left:8px;background:#fff6f6}
+.bitem{display:flex;align-items:center;gap:10px}
+.bitem img{width:90px;height:45px;object-fit:cover;border-radius:6px;background:#eee;flex:none}
+.bitem span{flex:1;font-size:13px;word-break:break-word}
 .status{padding:5px;background:#eee;border-radius:5px;font-size:12px}
 .hidden{display:none!important}
 #message{padding:10px;color:#168348;font-weight:bold}
@@ -155,11 +162,12 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 </div>
 
 <div id="bannerAdmin" class="hidden">
-<h3>Manage Banners</h3>
-<input id="bTitle" placeholder="Banner Title">
-<input id="bSubtitle" placeholder="Subtitle">
+<h3>Manage Banners <span id="bCount" class="small"></span></h3>
+<p class="small" style="margin-left:0">সর্বোচ্চ ১০টি ব্যানার। একসাথে অনেকগুলো ছবি বাছাই করা যায়। মাপ ১২০০×৬০০। একসাথে অনেকগুলো দিলে Title ও Subtitle সবগুলোতে একই বসবে, তাই আলাদা লেখা চাইলে একটা একটা করে দিন।</p>
+<input id="bTitle" placeholder="Banner Title (optional)">
+<input id="bSubtitle" placeholder="Subtitle (optional)">
 <input id="bLink" placeholder="Link URL (optional)">
-<input id="bImage" type="file" accept="image/jpeg,image/png,image/webp">
+<input id="bImage" type="file" multiple accept="image/jpeg,image/png,image/webp">
 <button class="btn" onclick="saveBanner()">Upload Banner</button>
 <div id="adminBanners"></div>
 </div>
@@ -237,6 +245,7 @@ const STORE_WHATSAPP="8801849482239";
 const PLACEHOLDER="https://placehold.co/400x400?text=Product";
 const DELIVERY={dhaka:70,outside:120};
 const COD_RATE=0.01;
+const MAX_BANNERS=10;
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 const POLICIES={
@@ -269,7 +278,7 @@ function openPolicy(type){
 }
 
 let products=[],categories=[],banners=[],ordersCache=[];
-let currentCategory="all",currentUser=null,isAdmin=false,lastOrderCount=null;
+let currentCategory="all",currentUser=null,isAdmin=false,lastOrderCount=null,bannerIndex=0;
 let editImages=[],detailImgs=[],detailCols=[],detailSzs=[],detailSel={color:"",size:""};
 
 function $(id){return document.getElementById(id);}
@@ -439,25 +448,33 @@ async function loadCategories(){
  $("pCategory").innerHTML=categories.map(c=>`<option value="${safe(c.name)}">${safe(c.name)}</option>`).join("");
 }
 
+function showBanner(i){
+ const sl=document.querySelectorAll("#bannerArea .slide");
+ const ds=document.querySelectorAll("#bannerArea .bdot");
+ if(!sl.length)return;
+ bannerIndex=(i+sl.length)%sl.length;
+ sl.forEach((el,k)=>el.classList.toggle("active",k===bannerIndex));
+ ds.forEach((el,k)=>el.classList.toggle("on",k===bannerIndex));
+}
+
 async function loadBanners(){
- const {data,error}=await db.from("banners").select("*").eq("is_active",true).order("sort_order");
+ const {data,error}=await db.from("banners").select("*").eq("is_active",true).order("sort_order",{ascending:true});
  if(error)return;
  banners=data||[];
  const area=$("bannerArea");
- if(!banners.length){area.innerHTML="";return;}
- area.innerHTML=banners.map((b,i)=>`
- <a href="${safe(b.link_url||"#")}" ${b.link_url?'target="_blank" rel="noopener"':""}>
- <img class="banner ${i===0?"active":""}" src="${safe(b.image_url)}" alt="${safe(b.title||"Banner")}">
- <div class="banner-text">${safe(b.title||"")} ${safe(b.subtitle||"")}</div></a>`).join("");
- let index=0;
  if(window.bannerTimer)clearInterval(window.bannerTimer);
- window.bannerTimer=setInterval(()=>{
-  const im=area.querySelectorAll(".banner");
-  if(!im.length)return;
-  im[index].classList.remove("active");
-  index=(index+1)%im.length;
-  im[index].classList.add("active");
- },4000);
+ if(!banners.length){area.innerHTML="";return;}
+ area.innerHTML=banners.map((b,i)=>{
+  const txt=((b.title||"")+" "+(b.subtitle||"")).trim();
+  const inner=`<img class="banner" src="${safe(b.image_url)}" alt="${safe(b.title||"Banner")}">`+
+   (txt?`<div class="banner-text">${safe(b.title||"")} ${safe(b.subtitle||"")}</div>`:"");
+  return `<div class="slide ${i===0?"active":""}">${b.link_url?`<a href="${safe(b.link_url)}" target="_blank" rel="noopener">${inner}</a>`:inner}</div>`;
+ }).join("")+
+ (banners.length>1?`<div class="bdots">${banners.map((b,i)=>`<button class="bdot ${i===0?"on":""}" onclick="showBanner(${i})" aria-label="Banner ${i+1}"></button>`).join("")}</div>`:"");
+ bannerIndex=0;
+ if(banners.length>1){
+  window.bannerTimer=setInterval(()=>showBanner(bannerIndex+1),4000);
+ }
 }
 
 function fillSel(id,arr,label,val){
@@ -651,24 +668,48 @@ async function deleteProduct(id){
 }
 
 async function saveBanner(){
+ let done=0;
  try{
-  const file=$("bImage").files[0];
-  if(!file)throw Error("Banner Image নির্বাচন করো।");
-  const image_url=await uploadImage(file);
-  const {error}=await db.from("banners").insert({
-   title:$("bTitle").value,subtitle:$("bSubtitle").value,image_url,
-   link_url:$("bLink").value||null,is_active:true,sort_order:0
-  });
-  if(error)throw error;
-  alert("Banner Upload হয়েছে!");
+  const files=Array.from($("bImage").files);
+  if(!files.length)throw Error("Banner Image নির্বাচন করো।");
+  const {data:ex,error:e0}=await db.from("banners").select("id,sort_order");
+  if(e0)throw e0;
+  const existing=ex||[];
+  if(existing.length+files.length>MAX_BANNERS){
+   throw Error("সর্বোচ্চ "+MAX_BANNERS+"টি ব্যানার রাখা যাবে। এখন আছে "+existing.length+"টি, আপনি "+files.length+"টি দিতে চাইছেন।");
+  }
+  let order=existing.reduce((m,x)=>Math.max(m,Number(x.sort_order)||0),0);
+  for(const f of files){
+   const image_url=await uploadImage(f);
+   order+=1;
+   const {error}=await db.from("banners").insert({
+    title:$("bTitle").value.trim()||null,
+    subtitle:$("bSubtitle").value.trim()||null,
+    image_url,
+    link_url:$("bLink").value.trim()||null,
+    is_active:true,
+    sort_order:order
+   });
+   if(error)throw error;
+   done++;
+  }
+  alert(done+"টি Banner Upload হয়েছে!");
+  $("bTitle").value="";$("bSubtitle").value="";$("bLink").value="";$("bImage").value="";
+ }catch(e){
+  alert("Banner Error: "+(e&&e.message?e.message:e)+(done?"\n(এর আগে "+done+"টি আপলোড হয়েছে)":""));
+ }finally{
   await loadBanners();await loadAdminBanners();
- }catch(e){alert(e.message);}
+ }
 }
 async function loadAdminBanners(){
- const {data,error}=await db.from("banners").select("*").order("id",{ascending:false});
- if(error)return;
- $("adminBanners").innerHTML=(data||[]).map(b=>`
- <div class="admin-item">${safe(b.title||"Banner")}
+ const {data,error}=await db.from("banners").select("*").order("sort_order",{ascending:true});
+ if(error){$("adminBanners").textContent=error.message;return;}
+ const list=data||[];
+ $("bCount").textContent="("+list.length+"/"+MAX_BANNERS+")";
+ $("adminBanners").innerHTML=list.map(b=>`
+ <div class="admin-item bitem">
+ <img src="${safe(b.image_url)}" alt="">
+ <span>${safe(b.title||"(লেখা নেই)")}</span>
  <button class="btn" onclick="deleteBanner(${b.id})">Delete</button></div>`).join("");
 }
 async function deleteBanner(id){
@@ -766,4 +807,4 @@ s0.parentNode.insertBefore(s1,s0);
 })();
 </script>
 </body>
-</html>
+ </html>
