@@ -49,6 +49,9 @@ main{max-width:1150px;margin:auto;padding:20px 14px}
 .menu button{display:block;width:100%;border:0;background:white;padding:10px 18px;text-align:left;cursor:pointer;font-size:14px}
 .info{background:white;padding:20px;border-radius:9px;margin-top:22px;line-height:1.7}
 footer{background:#080808;color:white;text-align:center;padding:25px;margin-top:30px}
+.plink{background:none;border:0;color:#fff;text-decoration:underline;cursor:pointer;margin:0 8px;font-size:13px;font-family:inherit}
+.policy{line-height:1.7;font-size:14px}
+.policy li{margin-bottom:6px}
 .modal{display:none;position:fixed;inset:0;background:#000a;z-index:20;align-items:center;justify-content:center;padding:12px}
 .modal-content{background:white;padding:20px;border-radius:12px;width:100%;max-width:480px;max-height:90vh;overflow:auto}
 input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc;border-radius:6px;font:inherit}
@@ -180,9 +183,20 @@ input,textarea,select{width:100%;padding:12px;margin:7px 0;border:1px solid #ccc
 </main>
 
 <footer>
+<p>
+<button class="plink" onclick="openPolicy('return')">রিটার্ন পলিসি</button>
+<button class="plink" onclick="openPolicy('privacy')">প্রাইভেসি পলিসি</button>
+</p>
 <p>© 2026 MY BAZAR BD. All rights reserved.</p>
 <p>Online Shopping in Bangladesh</p>
 </footer>
+
+<div class="modal" id="policyModal">
+<div class="modal-content">
+<button class="close" onclick="closeModal('policyModal')">✕</button>
+<div id="policyBody" class="policy"></div>
+</div>
+</div>
 
 <div class="modal" id="detailModal">
 <div class="modal-content">
@@ -224,6 +238,35 @@ const PLACEHOLDER="https://placehold.co/400x400?text=Product";
 const DELIVERY={dhaka:70,outside:120};
 const COD_RATE=0.01;
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const POLICIES={
+return:`<h2>রিটার্ন ও বদলের নীতি</h2>
+<p>আমরা চাই আপনি ভালো পণ্য পান। নিচের নিয়মগুলো প্রযোজ্য:</p>
+<ul>
+<li>ডেলিভারির সময় পণ্যটা দেখে নিন। কোনো সমস্যা থাকলে ডেলিভারি ম্যানের সামনেই জানান।</li>
+<li>ভুল পণ্য, নষ্ট বা ক্ষতিগ্রস্ত পণ্য এলে পণ্য হাতে পাওয়ার <b>৩ দিনের মধ্যে</b> আমাদের জানান। আমরা বদল বা ফেরতের ব্যবস্থা করব।</li>
+<li>জানানোর সময় অর্ডার আইডি এবং পণ্যের ছবি বা ভিডিও পাঠাতে হবে।</li>
+<li>পণ্য অবশ্যই অব্যবহৃত ও আসল অবস্থায় থাকতে হবে।</li>
+<li>আমাদের ভুলের কারণে (ভুল বা নষ্ট পণ্য) বদল বা ফেরত হলে ফেরতের ডেলিভারি খরচ আমরা বহন করব।</li>
+<li>কাস্টমারের পছন্দ না হওয়ার কারণে ফেরত চাইলে ডেলিভারি খরচ কাস্টমারকে বহন করতে হবে।</li>
+<li>ডেলিভারির সময় যে কাস্টমার পণ্য নিতে অস্বীকার করবেন, তাঁর পরবর্তী অর্ডার নিশ্চিত করার আগে আমরা যাচাই করতে পারি।</li>
+</ul>
+<p>যোগাযোগ: সাইটের WhatsApp বা Live Chat বাটন।</p>`,
+privacy:`<h2>প্রাইভেসি পলিসি</h2>
+<p>আপনার তথ্যের নিরাপত্তা আমাদের কাছে গুরুত্বপূর্ণ।</p>
+<ul>
+<li><b>আমরা যা সংগ্রহ করি:</b> অর্ডারের সময় আপনার নাম, মোবাইল নম্বর ও ডেলিভারি ঠিকানা।</li>
+<li><b>কেন ব্যবহার করি:</b> অর্ডার নিশ্চিত করা, পণ্য পৌঁছে দেওয়া এবং প্রয়োজনে আপনার সাথে যোগাযোগ করার জন্য।</li>
+<li><b>কার সাথে ভাগ করি:</b> পণ্য পৌঁছে দিতে আমাদের সরবরাহকারী ও ডেলিভারি পার্টনারের সাথে শুধু প্রয়োজনীয় তথ্য ভাগ করা হতে পারে।</li>
+<li>আপনার তথ্য আমরা কারো কাছে বিক্রি করি না।</li>
+<li>আমরা অনলাইন পেমেন্ট নিই না, তাই কোনো কার্ড বা ব্যাংকের তথ্য সংগ্রহ করি না। পেমেন্ট ক্যাশ অন ডেলিভারিতে।</li>
+<li>আপনার তথ্য মুছে ফেলতে চাইলে WhatsApp বা Live Chat-এ আমাদের জানান।</li>
+</ul>`
+};
+function openPolicy(type){
+ $("policyBody").innerHTML=POLICIES[type]||"";
+ $("policyModal").style.display="flex";
+}
 
 let products=[],categories=[],banners=[],ordersCache=[];
 let currentCategory="all",currentUser=null,isAdmin=false,lastOrderCount=null;
